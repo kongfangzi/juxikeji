@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>管理员列表</title>
+<#include "/header.html">
+</head>
+<body>
+<div id="rrapp" v-cloak>
+	<div v-show="showList">
+		<div class="grid-btn">
+			<div class="form-group col-sm-2">
+				<input type="text" class="form-control" v-model="q.deviceId" @keyup.enter="query" placeholder="设备id" minlength="0" maxlength="20">
+			</div>
+			<a class="btn btn-default" @click="query">查询</a>
+			<#if shiro.hasPermission("device:probe:save")>
+			<a class="btn btn-primary" @click="add"><i class="fa fa-plus"></i>&nbsp;新增</a>
+			</#if>
+			<#if shiro.hasPermission("device:probe:update")>
+			<a class="btn btn-primary" @click="update"><i class="fa fa-pencil-square-o"></i>&nbsp;修改</a>
+			</#if>
+			<#if shiro.hasPermission("device:probe:delete")>
+			<a class="btn btn-primary" @click="del"><i class="fa fa-trash-o"></i>&nbsp;删除</a>
+			</#if>
+			<#if shiro.hasPermission("device:probe:export")>
+				<a class="btn btn-primary" @click="exp"><i class="fa fa-trash-o"></i>&nbsp;导出</a>
+			</#if>
+		</div>
+	    <table id="jqGrid"></table>
+	    <div id="jqGridPager"></div>
+    </div>
+
+	<div v-show="!showList" class="panel panel-default">
+		<div class="panel-heading">{{title}}</div>
+		<form class="form-horizontal">
+			<div class="form-group">
+				<div class="col-sm-2 control-label">探针ID</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" v-model="probe.deviceId" placeholder="探针ID" minlength="0" maxlength="20"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">所属门店</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" style="cursor:pointer;" v-model="probe.storeId" @click="deptTree" readonly="readonly" placeholder="所属门店名称"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">设备key</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" v-model="probe.deviceKey" placeholder="设备key" minlength="0" maxlength="20"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">wifi名称</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" v-model="probe.wifi" placeholder="wifi名称" minlength="0" maxlength="20"/>
+				</div>
+			</div>
+			<div class="form-group">
+			<div class="col-sm-2 control-label">x轴</div>
+			<div class="col-sm-10">
+<!--				<input type="text" class="form-control" v-model="probe.longitude" placeholder="x轴，字符长度不能大于10"/>-->
+				<input type="number" class="form-control" v-model="probe.x" placeholder="x轴，数字长度不能大于16，保留两位小数" maxlength="16"/>
+			</div>
+		</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">y轴</div>
+				<div class="col-sm-10">
+<!--					<input type="text" class="form-control" v-model="probe.latitude" placeholder="y轴"/>-->
+					<input type="number" class="form-control" v-model="probe.y" placeholder="y轴，数字长度不能大于16，保留两位小数" maxlength="16"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">位置</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" v-model="probe.location" placeholder="位置" maxlength="10"/>
+				</div>
+			</div>
+<!--			<div class="form-group">-->
+<!--				<div class="col-sm-2 control-label">所属部门</div>-->
+<!--				<div class="col-sm-10">-->
+<!--					<input type="text" class="form-control" style="cursor:pointer;" v-model="probe.deptName" @click="deptTree1" readonly="readonly" placeholder="所属部门"/>-->
+<!--				</div>-->
+<!--			</div>-->
+			<div class="form-group">
+				<div class="col-sm-2 control-label">状态</div>
+				<label class="radio-inline">
+					<input type="radio" name="status" value="1" v-model="probe.status"/> 运行正常
+				</label>
+				<label class="radio-inline">
+					<input type="radio" name="status" value="0" v-model="probe.status"/> 未连接
+				</label>
+                <label class="radio-inline">
+                    <input type="radio" name="status" value="-1" v-model="probe.status"/> 运行失败
+                </label>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label"></div>
+				<input type="button" class="btn btn-primary" @click="saveOrUpdate" value="确定"/>
+				&nbsp;&nbsp;<input type="button" class="btn btn-warning" @click="reload" value="返回"/>
+			</div>
+		</form>
+	</div>
+</div>
+
+<!-- 选择部门 -->
+<div id="deptLayer" style="display: none;padding:10px;">
+	<select id="store"></select>
+</div>
+<!-- 选择部门 -->
+<div id="deptLayer1" style="display: none;padding:10px;">
+	<ul id="deptTree1" class="ztree"></ul>
+</div>
+
+<script src="${request.contextPath}/statics/js/modules/device/probe.js?_${.now?long}"></script>
+</body>
+</html>

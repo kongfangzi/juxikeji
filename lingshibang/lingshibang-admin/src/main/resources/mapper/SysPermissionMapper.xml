@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.juxi.lingshibang.admin.mapper.SysPermissionMapper">
+
+    <!--根据用户查询权限-->
+    <select id="listByUserId" resultType="com.juxi.lingshibang.common.model.dto.UserPermissionDTO">
+        select distinct
+        p.id,
+        p.parentId,
+        p.name,
+        p.css,
+        p.href,
+        p.device,
+        p.type,
+        p.permission,
+        p.sort
+        from s_permission p
+        inner join s_role_permission rp on p.id = rp.permissionId
+        inner join s_role_user ru on ru.roleId = rp.roleId
+        <where>
+            <if test="userId!=null and userId!=''">
+                and  ru.userId = #{userId}
+            </if>
+            <if test="device!=null and device!=''">
+                and  p.device = #{device}
+            </if>
+            <if test="type!=null and type!=''">
+                and  p.type = #{type}
+            </if>
+            <if test="isRemoved!=null and isRemoved!=''">
+                and  p.is_delete = #{isDelete}
+            </if>
+        </where>
+        order by p.sort
+    </select>
+
+
+</mapper>

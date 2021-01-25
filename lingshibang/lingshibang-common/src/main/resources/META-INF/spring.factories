@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+com.juxi.lingshibang.common.base.exceptions.decode.FeignClientErrorDecoder,\
+com.juxi.lingshibang.common.base.exceptions.handler.GlobalExceptionHandler

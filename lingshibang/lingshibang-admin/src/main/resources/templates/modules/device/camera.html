@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>管理员列表</title>
+	<#include "/header.html">
+</head>
+<body>
+<div id="rrapp" v-cloak>
+	<div v-show="showList">
+		<div class="grid-btn">
+			<div class="form-group col-sm-2">
+				<input type="text" class="form-control" v-model="q.cameraCloudName" @keyup.enter="query" placeholder="云端配置名称" minlength="0" maxlength="20">
+			</div>
+			<!--<div class="form-group col-sm-2">
+				<input type="text" class="form-control" v-model="q.startTime" @keyup.enter="query" placeholder="云端配置名称" minlength="0" maxlength="20">
+			</div>
+			<div class="form-group col-sm-2">
+				<input type="text" class="form-control" v-model="q.endTime" @keyup.enter="query" placeholder="云端配置名称" minlength="0" maxlength="20">
+			</div>-->
+			<a class="btn btn-default" @click="query">查询</a>
+			<#if shiro.hasPermission("device:camera:save")>
+			<a class="btn btn-primary" @click="add"><i class="fa fa-plus"></i>&nbsp;新增</a>
+		</#if>
+		<#if shiro.hasPermission("device:camera:update")>
+		<a class="btn btn-primary" @click="update"><i class="fa fa-pencil-square-o"></i>&nbsp;修改</a>
+	</#if>
+	<#if shiro.hasPermission("device:camera:delete")>
+	<a class="btn btn-primary" @click="del"><i class="fa fa-trash-o"></i>&nbsp;删除</a>
+</#if>
+<#if shiro.hasPermission("device:camera:export")>
+<a class="btn btn-primary" @click="exp"><i class="fa fa-trash-o"></i>&nbsp;导出</a>
+</#if>
+<!--			<#if shiro.hasPermission("device:camera:info")>-->
+<!--				<a class="btn btn-primary" @click="details"><i class="fa fa-plus"></i>&nbsp;查看</a>-->
+<!--			</#if>-->
+</div>
+<table id="jqGrid"></table>
+<div id="jqGridPager"></div>
+</div>
+
+<div v-show="!showList" class="panel panel-default" style="width: 100%;">
+<div style="height:auto; float:left; display:inline">
+	<!--	<div v-show="!showList" class="panel panel-default">-->
+	<div class="panel-heading">{{title}}</div>
+	<form class="form-horizontal">
+		<div class="form-group">
+			<div class="col-sm-2 control-label">IP地址</div>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" v-model="camera.ip" placeholder="IP地址"maxlength="20" minlength="0"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2 control-label">所属门店</div>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" style="cursor:pointer;" v-model="camera.storeId"
+					   @click="deptTree" readonly="readonly" placeholder="所属门店"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2 control-label">云端服务配置</div>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" v-model="camera.cameraCloudName" placeholder="云端服务配置" minlength="0" maxlength="20"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2 control-label">品牌</div>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" v-model="camera.brand" placeholder="品牌"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2 control-label">型号</div>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" v-model="camera.model" placeholder="型号"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2 control-label">登录名</div>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" v-model="camera.loginUser" placeholder="登录名" minlength="0" maxlength="20"/>
+			</div>
+		</div>
+<!--		<div class="form-group">-->
+<!--			<div class="col-sm-2 control-label">登录密码</div>-->
+<!--			<div class="col-sm-10">-->
+<!--				<input type="text" class="form-control" v-model="camera.loginPassword" placeholder="登录密码" minlength="0" maxlength="20"/>-->
+<!--			</div>-->
+<!--		</div>-->
+		<div class="form-group">
+			<div class="col-sm-2 control-label">x轴</div>
+			<div class="col-sm-10">
+				<input type="number" class="form-control" v-model="camera.longitude" placeholder="x轴，数字长度不能大于10" maxlength="10"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2 control-label">y轴</div>
+			<div class="col-sm-10">
+				<input type="number" class="form-control" v-model="camera.latitude" placeholder="y轴，数字长度不能大于10" maxlength="10"/>
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2 control-label">位置</div>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" v-model="camera.location" placeholder="位置" maxlength="20"/>
+			</div>
+		</div>
+		<!--			<div class="form-group">-->
+		<!--				<div class="col-sm-2 control-label">所属部门</div>-->
+		<!--				<div class="col-sm-10">-->
+		<!--					<input type="text" class="form-control" style="cursor:pointer;" v-model="camera.deptName" @click="deptTree1" readonly="readonly" placeholder="所属部门"/>-->
+		<!--				</div>-->
+		<!--			</div>-->
+		<div class="form-group">
+			<div class="col-sm-2 control-label">技能</div>
+			<label class="radio-inline">
+				<input type="checkbox" name="skill" value="1" v-model="camera.skill1"/> 人脸识别
+			</label>
+			<label class="radio-inline">
+				<input type="checkbox" name="skill" value="2" v-model="camera.skill2"/> 车牌识别
+			</label>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2 control-label">状态</div>
+			<label class="radio-inline">
+				<input type="radio" name="status" value="1" v-model="camera.status"/> 正常运行
+			</label>
+			<label class="radio-inline">
+				<input type="radio" name="status" value="0" v-model="camera.status"/> 未连接
+			</label>
+			<label class="radio-inline">
+				<input type="radio" name="status" value="-1" v-model="camera.status"/> 运行失败
+			</label>
+		</div>
+		<div class="form-group">
+			<div class="col-sm-2 control-label"></div>
+			<input type="button" class="btn btn-primary" @click="saveOrUpdate" value="确定"/>
+			&nbsp;&nbsp;<input type="button" class="btn btn-warning" @click="reload" value="返回"/>
+		</div>
+	</form>
+</div>
+<!--<div style="width:600px; height:auto;  display:inline">-->
+<!--	<img :src="ichnographyUrl" id="ichnographyUrl" style="width: calc(100% - 550px);">-->
+<!--&lt;!&ndash;	width: 100px;height: 100px;  margin-left: 400px; border-radius:49px;&ndash;&gt;-->
+<!--</div>-->
+</div>
+
+<!-- 选择部门 -->
+<div id="deptLayer" style="display: none;padding:10px;">
+	<select id="store"></select>
+</div>
+<!-- 选择部门 -->
+<div id="deptLayer1" style="display: none;padding:10px;">
+	<ul id="deptTree1" class="ztree"></ul>
+</div>
+
+<script src="${request.contextPath}/statics/js/modules/device/camera.js?_${.now?long}"></script>
+</body>
+</html>

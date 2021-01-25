@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>店员信息管理</title>
+    <#include "/header.html">
+    <script src="${request.contextPath}/statics/plugins/qrcode.min.js"></script>
+    <style>
+        a{
+            cursor: pointer;
+        }
+        select{
+            width: 30px;
+        }
+    </style>
+</head>
+<body>
+<div id="rrapp" v-cloak>
+    <div v-show="showList">
+        <div class="grid-btn" style="display: block">
+            <div class="row">
+                <div class="form-group col-sm-2">
+                    <span>店员</span>
+                    <input type="text" class="form-control" v-model="q.name" placeholder="店员">
+                </div>
+                <div class="form-group col-sm-2">
+                    <span>人员类型</span>
+                    <select class="form-control" v-model="q.staffType">
+                        <option value="1">销售顾问</option>
+                        <option value="0">其他</option>
+                    </select>
+                </div>
+                <div class="form-group col-sm-2">
+                    <span>所在门店</span>
+                    <select class="form-control" v-model="q.deptId" class="deptInfo">
+                        <option value="">请选择</option>
+                        <option v-for="item in ops" :value="item.id">{{ item.storeName}}</option>
+                    </select>
+                </div>
+                <div class="form-group col-sm-2">
+                    <span>是否在职</span>
+                    <select class="form-control" v-model="q.postStatus">
+                        <option value="1">是</option>
+                        <option value="0">否</option>
+                    </select>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-2">
+                    <span>开始时间</span>
+                    <div class="input-group date form_date" data-date="" data-date-format="yyyy-mm-dd">
+                        <input class="form-control" size="16" type="text" value="" readonly v-model="q.startTime">
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                    </div>
+                </div>
+                <div class="col-sm-2">
+                    <span>结束时间</span>
+                    <div class="input-group date form_date" data-date="" data-date-format="yyyy-mm-dd" style="float: left">
+                        <input class="form-control" size="16" type="text" value="" readonly v-model="q.endTime">
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-remove"></span></span>
+                        <span class="input-group-addon"><span class="glyphicon glyphicon-calendar"></span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="row" style="padding-bottom:8px;">
+            <div class="col-sm-8" style="float: left">
+                <a class="btn btn-default" @click="query">查询</a>
+                <#if shiro.hasPermission("sys:role:save")>
+                   <a class="btn btn-primary" @click="add"><i class="fa fa-plus"></i>&nbsp;新增</a>
+               </#if>
+               <#if shiro.hasPermission("sys:role:update")>
+                   <a class="btn btn-primary" @click="update"><i class="fa fa-pencil-square-o"></i>&nbsp;修改</a>
+               </#if>
+               <#if shiro.hasPermission("sys:role:delete")>
+                  <a class="btn btn-primary" @click="del"><i class="fa fa-trash-o"></i>&nbsp;删除</a>
+               </#if>
+            </div>
+            <div style="float: right">
+                <div class="">
+                    <div class="col-sm-12">
+                        <!--<a class="btn btn-sm btn-default" @click="query">导出考勤</a>-->
+                        &nbsp;&nbsp; <a href="${request.contextPath}/statics/files/店员导入模板.xlsx" class="btn btn-sm btn-default" style="float: right">模板下载</a>
+                       &nbsp;&nbsp; <a class="btn btn-sm btn-default" @click="$('#file').click();" style="float: right">导入</a>&nbsp;&nbsp;
+                    </div>
+                    <div class="col-sm-5">
+                        <form role="form">
+                            <input type="file" style="display:none;" id="file" @change="uploadFile">
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <table id="jqGrid"></table>
+        <div id="jqGridPager"></div>
+    </div>
+
+
+    <div v-show="!updatePage" class="panel panel-default">
+        <div class="panel-heading">{{title}}<button type="button" class="close" aria-hidden="true" @click="reload">×</button></div>
+        <form class="form-horizontal">
+            <div class="form-group">
+                <div class="col-sm-2 control-label">
+                    <input class="btn btn-sm btn-primary" @click="getBase64" type="button" value="人脸识别"/>
+                </div>
+                <div class="col-sm-10 control-label">
+                    <img :src="staff.headUrl" style="width: 100px;height: 100px;float:left;display:block;border-radius:49px;">
+                    <input type="file" id="img" name="headUrl" onchange="uploadImg()">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-10">
+                    <input type="hidden" class="form-control" v-model="staff.id" placeholder="id"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">员工编号</div>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" v-model="staff.staffId" placeholder="员工编号" maxlength="40"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">员工姓名</div>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" v-model="staff.name" placeholder="员工姓名" maxlength="25"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">性别</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" title="性别" v-model="staff.sex">
+                        <option value="1">男</option>
+                        <option value="2">女</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">是否在职</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" title="是否在职" v-model="staff.postStatus">
+                        <option value="1">是</option>
+                        <option value="0">否</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">所在门店</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" title="请选择" v-model="staff.deptId">
+                        <option>请选择</option>
+                        <option v-for="item in ops" :value="item.id">{{ item.storeName}}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">人员类型</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" v-model="staff.staffType" @change="isSale">
+                        <option value="1">销售顾问</option>
+                        <option value="0">其它</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">状态</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" title="请选择" v-model="staff.dutyStatus">
+                        <option value="0">离线</option>
+                        <option value="1">忙碌</option>
+                        <option value="2">在线</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">
+                    <label>
+                        <input type="checkbox" v-model="staff.flag" id="staff_flag">
+                    </label>
+                </div>
+                <div class="col-sm-10">
+                    <label for="staff_flag">销售冠军</label>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">标签</div>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="personLabels" placeholder="标签" value="" v-model="staff.personLabels"/>
+                    <input type="hidden" v-model="staff.personLabels"/>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label"></div>
+                <div class="col-sm-10">
+                    <span class="label label-info">#领克01#</span>
+                    <span class="label label-info">#领克02#</span>
+                    <span class="label label-info">#领克03#</span>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">被关注数(基础数值)</div>
+                <div class="col-sm-10">
+                    <input type="number" maxlength="10" class="form-control" v-model.number="staff.facoriteCount" placeholder="被关注数(基础数值)"/>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">服务人数(基础数值)</div>
+                <div class="col-sm-10">
+                    <input type="number" maxlength="10" class="form-control" v-model.number="staff.servedCount" placeholder="服务人数(基础数值)"/>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">二维码链接</div>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" v-model="staff.qrcode" placeholder="二维码链接"/>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">个人宣言</div>
+                <div class="col-sm-10">
+                    <!--<input type="text" class="form-control" v-model="staff.motto" placeholder="个人宣言"/>-->
+                    <textarea class="form-control" rows="3" v-model="staff.motto"></textarea>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">推荐车型</div>
+                <div class="col-sm-10">
+                    <!--<select class="form-control bs-select" title="请选择" v-model="staff.labels">
+                        <option value="01">01</option>
+                        <option value="02">02</option>
+                        <option value="03">03</option>
+                        <option value="03+">03+</option>
+                        <option value="PHEV">PHEV</option>
+                    </select>-->
+                    <input type="text" class="form-control" v-model="staff.labels" placeholder="推荐车型"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label"></div>
+                <input type="button" class="btn btn-primary" @click="execUpdate" value="确定"/>
+                &nbsp;&nbsp;<input type="button" class="btn btn-warning" @click="reload" value="返回"/>
+            </div>
+        </form>
+    </div>
+
+    <div v-show="!addPage" class="panel panel-default">
+        <div class="panel-heading">{{title}}<button type="button" class="close" aria-hidden="true" @click="reload">×</button></div>
+        <form class="form-horizontal">
+            <div class="form-group">
+                <div class="col-sm-2 control-label">
+                    人脸识别
+                </div>
+                <div class="col-sm-10 control-label">
+                    <img :src="detailHeadUrl" style="width: 100px;height: 100px;float:left;display:block;border-radius:49px;">
+                    <input type="file" id="img" name="headUrl" onchange="uploadImg()">
+                </div>
+                <!--<div class="col-sm-10">
+                    <label>
+                        <input type="checkbox" checked="checked">识别成功
+                    </label>
+                </div>-->
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">员工编号</div>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" v-model="staff.staffId" placeholder="员工编号" maxlength="40"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">员工姓名</div>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" v-model="staff.name" placeholder="员工姓名" maxlength="25"/>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">性别</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" title="性别" v-model="staff.sex">
+                        <option value="1">男</option>
+                        <option value="2">女</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">是否在职</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" title="是否在职" v-model="staff.postStatus">
+                        <option value="1">是</option>
+                        <option value="0">否</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">所在门店</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" title="请选择" v-model="staff.deptId">
+                        <option>请选择</option>
+                        <option v-for="item in ops" :value="item.id">{{ item.storeName}}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-2 control-label">人员类型</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" v-model="staff.staffType" @change="isSale">
+                        <option value="1">销售顾问</option>
+                        <option value="0">其它</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">状态</div>
+                <div class="col-sm-10">
+                    <select class="form-control bs-select" title="请选择" v-model="staff.dutyStatus">
+                        <option value="0">离线</option>
+                        <option value="1">忙碌</option>
+                        <option value="2">在线</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">
+                    <label>
+                        <input type="checkbox" v-model="staff.flag" id="staff_flag">
+                    </label>
+                </div>
+                <div class="col-sm-10">
+                    <label for="staff_flag">销售冠军</label>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">标签</div>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="personLabels" placeholder="标签" value="" v-model="staff.personLabels"/>
+                    <input type="hidden" v-model="staff.personLabels"/>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label"></div>
+                <div class="col-sm-10">
+                    <span class="label label-info">#领克01#</span>
+                    <span class="label label-info">#领克02#</span>
+                    <span class="label label-info">#领克03#</span>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">被关注数(基础数值)</div>
+                <div class="col-sm-10">
+                    <input type="number" maxlength="10" class="form-control" v-model.number="staff.facoriteCount" placeholder="被关注数(基础数值)"/>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">服务人数(基础数值)</div>
+                <div class="col-sm-10">
+                    <input type="number" maxlength="10" class="form-control" v-model.number="staff.servedCount" placeholder="服务人数(基础数值)"/>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">二维码链接</div>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" v-model="staff.qrcode" placeholder="二维码链接"/>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">个人宣言</div>
+                <div class="col-sm-10">
+                    <!--<input type="text" class="form-control" v-model="staff.motto" placeholder="个人宣言"/>-->
+                    <textarea class="form-control" rows="3" v-model="staff.motto"></textarea>
+                </div>
+            </div>
+            <div class="form-group" v-show="sale">
+                <div class="col-sm-2 control-label">推荐车型</div>
+                <div class="col-sm-10">
+                    <!--<select class="form-control bs-select" title="请选择" v-model="staff.labels">
+                        <option value="01">01</option>
+                        <option value="02">02</option>
+                        <option value="03">03</option>
+                        <option value="03+">03+</option>
+                        <option value="PHEV">PHEV</option>
+                    </select>-->
+                    <input type="text" class="form-control" v-model="staff.labels" placeholder="推荐车型"/>
+                </div>
+            </div>
+        </form>
+        <div class="form-group">
+            <div class="col-sm-2 control-label"></div>
+            <input type="button" class="btn btn-primary" @click="execUpdate" value="确定"/>
+            &nbsp;&nbsp;<input type="button" class="btn btn-warning" @click="reload" value="返回"/>
+        </div>
+    </div>
+
+
+    <div v-show="!attendance" class="panel panel-default">
+        <div class="panel-heading">{{title}}</div>
+        <div class="row">
+            <button class="btn btn-sm" onclick="exportAttendence()">导出考勤</button>
+            <button class="btn btn-sm" @click="reload">关闭</button>
+        </div>
+        <table id="jqGridAttendance"></table>
+        <div id="jqGridPagerAttendance"></div>
+    </div>
+
+    <div v-show="!staffDetail" class="panel panel-default">
+        <div class="panel-heading">{{title}}<button type="button" class="close" aria-hidden="true" @click="reload">×</button></div>
+        <div class="row">
+            <div class="col-sm-6">
+                <div class="row" v-for="(staff,i) in detailObj">
+                    <div class="col-sm-4"><span style="float: right;">{{staff.name}}</span></div>
+                    <div class="col-sm-4"><span style="float: left">{{staff.value}}</span></div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4"></div>
+                    <div class="col-sm-8" id="qrcode"></div>
+                </div>
+            </div>
+            <div class="col-sm-6">
+                <img :src="detailHeadUrl" style="width: 100px;height: 100px;border-radius:49px;">
+            </div>
+        </div>
+    </div>
+</div>
+<!--<script src="${request.contextPath}/statics/js/modules/staff/consultant.js?_${.now?long}"></script>-->
+<script src="${request.contextPath}/statics/js/modules/staff/list.js?_${.now?long}"></script>
+</body>
+</html>

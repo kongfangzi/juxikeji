@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.juxi.lingshibang.admin.mapper.UserMapper">
+
+    <sql id="Base_Column_List" >
+        id, user_code, company, user_name, nick_name, password, salt, gender, tel_phone,
+        id_card, birthday, weixin_id, constellation, identity, avatar, status, score, rank,
+        summary, source, invitation_code, inviter_code, invite_time, type, poundage_type, due_time,
+        creator, create_time, is_delete, strtag, inttag, updator, update_time
+    </sql>
+
+    <!--查询当前用户相关信息-->
+    <select id="loginUserInfo" resultType="com.juxi.lingshibang.common.model.dto.LoginUserDTO">
+        select u.id,
+        u.username,
+        u.sort,
+        u.type,
+        u.due_time as dueTime,
+        from tb_user u
+        <where>
+            <if test="userId!=null and userId!=''">
+                and  u.id = #{userId}
+            </if>
+            <if test="removed!=null">
+                and  u.is_delete = #{removed}
+            </if>
+        </where>
+    </select>
+
+    <!--查询当前用户角色-->
+    <select id="getUserRolesByUserId" resultType="java.lang.Integer">
+        select r.role_name as roleName
+        from sys_role r inner join sys_role_user ru on r.id=ru.roleId
+        inner join tb_user      u  on ru.userId=u.id
+        <where>
+            <if test="userId!=null and userId!=''">
+                and  u.id = #{userId}
+            </if>
+            <if test="removed!=null">
+                and  u.is_delete = #{removed}
+            </if>
+        </where>
+    </select>
+
+    <select id="getListByDepRoleParams" resultMap="com.juxi.lingshibang.admin.entityUser" >
+        SELECT DISTINCT(U.id) AS uniqueId,U.id, U.company_id, U.username,U.`name` ,
+        U.`password`, U.salt, U.jobNo, U.phone, U.onJob,
+        U.`status`, U.sort, U.`type`, U.due_time, U.data_title, U.template_type,
+        U.template_id, U.template_data, U.creator, U.create_time,
+        U.is_delete, U.strtag, U.inttag, U.updator, U.update_time
+        FROM tb_user U
+        LEFT JOIN s_dep_user D ON U.id = D.userId
+        LEFT JOIN s_role_user R ON U.id = R.userId
+        <where>
+            U.company_id = #{companyId,jdbcType=VARCHAR}
+            <if test="depIdList!=null and depIdList.size() > 0 ">
+                AND D.depId IN
+                <foreach collection="depIdList" item="depId" open="(" close=")" separator=",">
+                    #{depId,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+            <if test="roleIdList!=null and roleIdList.size() > 0 ">
+                AND R.roleId IN
+                <foreach collection="roleIdList" item="roleId" open="(" close=")" separator=",">
+                    #{roleId,jdbcType=VARCHAR}
+                </foreach>
+            </if>
+            <if test="onJobList !=null and onJobList.size() > 0 ">
+                AND A.onJob IN
+                <foreach collection="onJobList" item="onJob" open="(" close=")" separator=",">
+                    #{onJob}
+                </foreach>
+            </if>
+            <if test="params != null">
+                <foreach collection="params.entrySet()" index="key" item="value" >
+                    and U.${key} like concat(concat('%',#{value}),'%')
+                </foreach>
+            </if>
+            AND U.is_delete = 0
+        </where>
+        order by U.create_time DESC
+    </select>
+
+    <!--密码重置-->
+    <update id="passwordReset" >
+        update tb_user u
+        <set>
+            <if test="password!= null and password!= ''">
+                u.password = md5(CONCAT(#{password},u.salt)),
+            </if>
+            <if test="updator!= null and updator!= ''">
+                u.updator = #{updator},
+            </if>
+            u.update_time= now()
+        </set>
+        where u.id in
+        <foreach collection="ids" index="index" item="item"
+                 open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </update>
+
+<!--    <insert id="insertBatch" parameterType="java.util.List">-->
+<!--        INSERT INTO s_user-->
+<!--        (-->
+<!--        id , company_id, username, `name`,`password`, salt, jobNo, phone, onJob, `status`, sort, `type`, due_time, data_title,-->
+<!--        template_type, template_id, template_data, creator, create_time, is_delete, strtag, inttag, updator,update_time-->
+<!--        )-->
+<!--        VALUES-->
+<!--        <foreach collection="userList" item="item" open="(" close=")" separator=",">-->
+<!--            #{item.id},#{item.companyId},#{item.username},#{item.name},#{item.password},#{item.salt},-->
+<!--            #{item.jobNo},#{item.phone},#{item.onJob}, #{item.status},#{item.sort},#{item.type},-->
+<!--            #{item.dueTime},#{item.dataTitle}, #{item.templateType},-->
+<!--            #{item.templateId},#{item.templateData,typeHandler=com.guniugroup.mes.common.util.json.ObjectJsonHandler},-->
+<!--            #{item.creator},#{item.createTime},#{item.isDelete},-->
+<!--            #{item.strtag},#{item.inttag},#{item.updator},#{item.updateTime}-->
+<!--        </foreach>-->
+<!--    </insert>-->
+
+<!--    <select id="getUsersByDepIds" resultMap="com.juxi.lingshibang.admin.entityUser" >-->
+<!--        select-->
+<!--        <include refid="Base_Column_List" />-->
+<!--        from s_user u-->
+<!--        <if test="depIds != null and depIds.size()>0">-->
+<!--            inner join s_dep_user du on u.id=du.userId-->
+<!--            where du.depId in-->
+<!--            <foreach collection="depIds" index="index" item="o" open="(" separator="," close=")">-->
+<!--                #{depIds[${index}],jdbcType=VARCHAR}-->
+<!--            </foreach>-->
+<!--        </if>-->
+<!--        and u.is_delete = 0-->
+<!--    </select>-->
+
+    <select id="getUsersByRoleIds" resultMap="com.juxi.lingshibang.admin.entity.User" >
+        select
+        <include refid="Base_Column_List" />
+        from tb_user u
+        <if test="roleIds != null and roleIds.size()>0">
+            inner join sys_role_user ru on u.id=ru.userId
+            where ru.roleId in
+            <foreach collection="roleIds" index="index" item="o" open="(" separator="," close=")">
+                #{roleIds[${index}],jdbcType=VARCHAR}
+            </foreach>
+        </if>
+        and u.is_delete = 0
+    </select>
+
+    <!--用户列表查询-->
+    <select id="selectByCondition" resultMap="com.juxi.lingshibang.admin.entity.User">
+        select
+        <include refid="Base_Column_List" />
+        from tb_user
+        where
+        <if test="params != null">
+            <foreach collection="params.entrySet()" index="key" item="value" >
+                and u.${key} = #{value}
+            </foreach>
+        </if>
+        group by id
+    </select>
+</mapper>

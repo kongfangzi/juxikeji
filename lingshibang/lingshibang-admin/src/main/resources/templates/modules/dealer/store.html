@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>管理员列表</title>
+	<#include "/header.html">
+		</head>
+<body>
+<div id="rrapp" v-cloak>
+	<div v-show="showList">
+		<div class="grid-btn">
+			<div class="form-group col-sm-2">
+				<input type="text" class="form-control" v-model="q.storeName" @keyup.enter="query" placeholder="门店名称">
+			</div>
+			<a class="btn btn-default" @click="query">查询</a>
+			<#if shiro.hasPermission("dealer:store:save")>
+				<a class="btn btn-primary" @click="add"><i class="fa fa-plus"></i>&nbsp;新增</a>
+			</#if>
+			<#if shiro.hasPermission("dealer:store:update")>
+				<a class="btn btn-primary" @click="update"><i class="fa fa-pencil-square-o"></i>&nbsp;修改</a>
+			</#if>
+			<#if shiro.hasPermission("dealer:store:delete")>
+				<a class="btn btn-primary" @click="del"><i class="fa fa-trash-o"></i>&nbsp;删除</a>
+			</#if>
+			<#if shiro.hasPermission("dealer:store:export")>
+				<a class="btn btn-primary" @click="exp"><i class="fa fa-plus"></i>&nbsp;导出</a>
+			</#if>
+<!--			<#if shiro.hasPermission("dealer:store:info")>-->
+<!--				<a class="btn btn-primary" @click="details"><i class="fa fa-plus"></i>&nbsp;查看</a>-->
+<!--			</#if>-->
+		</div>
+		<table id="jqGrid"></table>
+		<div id="jqGridPager"></div>
+	</div>
+
+	<div v-show="!showList" class="panel panel-default">
+		<div class="panel-heading">{{title}}</div>
+		<form class="form-horizontal">
+			<div class="form-group">
+				<div class="col-sm-2 control-label">门店名称</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" v-model="store.storeName" placeholder="门店名称" minlength="0" maxlength="20"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">门店类型</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" style="cursor:pointer;" v-model="store.storeTypeId"
+						   @click="storeTypeTree" readonly="readonly" placeholder="门店类型"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">大区名称</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" style="cursor:pointer;" v-model="store.areaCode" @click="areaTree" readonly="readonly" placeholder="所属大区"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">所属经销商</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" style="cursor:pointer;" v-model="store.dealerCode"
+						   @click="deptTree" readonly="readonly" placeholder="所属经销商"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">门店所在地</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" style="cursor:pointer;" v-model="store.sysAreaName" @click="sysAreaTree" readonly="readonly" placeholder="门店所在地"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">详细地址</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" style="cursor:pointer;" v-model="store.address"
+						   placeholder="详细地址"/>
+				</div>
+			</div>
+			<div class="form-group">
+			<div class="col-sm-2 control-label">负责人</div>
+			<div class="col-sm-10">
+				<input type="text" class="form-control" style="cursor:pointer;" v-model="store.principalName"
+					  placeholder="负责人" minlength="0" maxlength="10"/>
+			</div>
+		</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">联系方式</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" style="cursor:pointer;" v-model="store.telephone"
+						  placeholder="联系方式" minlength="0" maxlength="11"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">备注</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" style="cursor:pointer;" v-model="store.remark"
+						   placeholder="备注"maxlength="50"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">所属部门</div>
+				<div class="col-sm-10">
+					<input type="text" class="form-control" style="cursor:pointer;" v-model="store.deptName" @click="deptTree1" readonly="readonly" placeholder="所属部门"/>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">状态</div>
+				<label class="radio-inline">
+					<input type="radio" name="status" value="0" v-model="store.status"/> 未安装
+				</label>
+				<label class="radio-inline">
+					<input type="radio" name="status" value="1" v-model="store.status"/> 已安装
+				</label>
+				<label class="radio-inline">
+					<input type="radio" name="status" value="-1" v-model="store.status"/> 已下线
+				</label>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label">热力图</div>
+				<div class="col-sm-10">
+				<img src="${request.contextPath}/statics/picture/ichnography.png" id="ichnographyUrl" style="width: 100px;height: 100px;">
+<!--				<img :src="ichnography.jpg" id="ichnographyUrl" style="width: 100px;height: 100px;">-->
+				<input type="file" id="img" name="headUrl" onchange="uploadImg()">
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-sm-2 control-label"></div>
+				<input type="button" class="btn btn-primary" @click="saveOrUpdate" value="确定"/>
+				&nbsp;&nbsp;<input type="button" class="btn btn-warning" @click="reload" value="返回"/>
+			</div>
+		</form>
+	</div>
+</div>
+<!--选择所属的大区-->
+<div id="areaLayer" style="display: none;padding:10px;">
+	<select id="area"></select>
+</div>
+<!-- 选择经销商 -->
+<div id="deptLayer" style="display: none;padding:10px;">
+	<select id="storeDealer"></select>
+</div>
+<!-- 选择部门 -->
+<div id="deptLayer1" style="display: none;padding:10px;">
+	<ul id="deptTree1" class="ztree"></ul>
+</div>
+<!-- 选择门店类型 -->
+<div id="storeTypeLayer" style="display: none;padding:10px;">
+	<select id="storeType"></select>
+</div>
+<!-- 选择省市区 -->
+<div id="sysAreaLayer" style="display: none;padding:10px;">
+	<ul id="sysAreaTree" class="ztree"></ul>
+</div>
+
+<script src="${request.contextPath}/statics/js/modules/dealer/store.js?_${.now?long}"></script>
+</body>
+</head></html>

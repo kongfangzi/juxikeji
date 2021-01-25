@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.juxi.lingshibang.admin.mapper.SysRoleUserMapper">
+
+    <delete id="deleteByRoleUser">
+        delete from s_role_user where userId = #{userId} and roleId = #{roleId}
+    </delete>
+
+    <delete id="deleteBatchByUserId">
+        delete from s_role_user where userId in
+        <foreach item="userId" collection="array" open="(" separator="," close=")">
+            #{userId}
+        </foreach>
+    </delete>
+</mapper>

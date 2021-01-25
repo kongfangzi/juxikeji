@@ -1,0 +1,188 @@
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  #  mvc:
+  #    servlet:
+  #      load-on-startup: 0
+  datasource:
+    url: jdbc:mysql://81.69.43.241:3306/juxi_test?useSSL=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true
+    username: root
+    password: juxi202012
+    driver-class-name: com.mysql.jdbc.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      minimum-idle: 10
+      auto-commit: true
+      idle-timeout: 10000
+      pool-name: DatebookHikariCP
+      max-lifetime: 1800000
+      connection-timeout: 30000
+  redis:
+    host: 81.69.43.241
+    password:
+    database: 14
+    port: 6379
+    jedis:
+      pool:
+        #连接池中最大空闲连接
+        max-idle: 8
+        #连接池中最小空闲连接
+        min-idle: 1
+        #连接池中最大连接数 （使用负值表示没有限制）
+        max-active: 8
+        #连接池最大等待阻塞时间 （使用负值表示没有限制）
+        max-wait: -1
+    #连接超时时间（毫秒）
+    timeout: 50000
+  cloud:
+    loadbalancer:
+      retry:
+        enabled: true
+management:
+  endpoint:
+    pause:
+      enabled: true
+    restart:
+      enabled: true
+    health:
+      enabled: true
+      show-details: ALWAYS
+  health:
+    rabbit:
+      enabled: false
+  endpoints:
+    web:
+      exposure:
+        include: pause, restart, health
+#忽略Swagger 数字参数类型异常
+#logging:
+#  level:
+#    com.alibaba.nacos.client.config.impl.ClientWorker: error
+#    io.swagger.models.parameters.AbstractSerializableParameter: error
+# Feign 配置
+#feign:
+#  httpclient:
+#    enabled: false
+#  okhttp:
+#    enabled: true
+#  client:
+#    config:
+#      default:
+#        connectTimeout: 18000
+#        readTimeout: 18000
+#  hystrix:
+#    enabled: true
+# Ribbon 配置
+#ribbon:
+#  ReadTimeout: 10000
+#  ConnectTimeout: 5000
+#  MaxAutoRetries: 1
+#  MaxAutoRetriesNextServer: 1
+#  OkToRetryOnAllOperations: true
+#  ServerListRefreshInterval: 1000
+#  eager-load:
+#    enabled: true
+# Hystrix 配置
+#hystrix:
+#  shareSecurityContext: true
+#  propagate:
+#    requestAttribute:
+#      enabled: true
+#  circuitBreaker:
+#    enabled: true
+#    errorThresholdPercentage: 50
+#    requestVolumeThreshold: 20
+#    sleepWindowInMilliseconds: 10000
+#  command:
+#    default:
+#      execution:
+#        isolation:
+#          strategy: THREAD
+#          thread:
+#            interruptOnCancel: false
+#            interruptOnTimeout: true
+#            timeoutInMilliseconds: 6000
+#        timeout:
+#          enabled: true
+#  metrics:
+#    rollingStats:
+#      timeInMilliseconds: 18000
+
+
+
+#oss文件目录配置
+oss:
+  catalog:
+    # 会员头像
+    memberHead: rebate/memberHead/
+
+# 默认头像
+default:
+#  headImg: http://yzhloss.oss-cn-hangzhou.aliyuncs.com/smartNetbar/empImg/939c71db70534b5e9e0cd9aa35d198e6.png
+#上传Excel模板最大数据量限制
+excel:
+  upload:
+    limit:
+      max-data-size: 100000
+
+#阿里短信配置
+#sms:
+#  ali:
+#    # true:关闭短信 false:开启短信
+#    dev: true
+#    key: LTAIqUZwiZx9MTjT
+#    secret: fpR9XcFxA4ue96s7GcmKx4j7jxkTS1
+
+#后台会话默认时间（分）
+session:
+  timeout: 30
+
+#rest调用超时时间设置
+#rest:
+#  read-timeout: 30000
+#  connect-timeout: 10000
+#  encrypt-key: guniu_mes
+#  report-encrypt-key: guniu_key
+
+#rocket mq 相关配置
+#aliyunmq:
+#  accessKey: LTAI4Fk28M6P7nBmmznRAWck
+#  secretKey: SelGGl463bl3DacquNuajIiyC1kssU
+#  type: rocket
+#  rocketmq:
+#    namesrvAddr: http://MQ_INST_1705106528769166_BbDQxZv8.mq-internet-access.mq-internet.aliyuncs.com:80
+
+#分布式文件系统FDFS配置
+fdfs:
+  #连接超时
+  connect-timeout: 3000
+  #读取超时
+  so-timeout: 1000
+  #缩略图
+  thumb-image:
+    width: 150
+    height: 150
+  #tracker服务配置列表地址，支持多个
+  tracker-list:
+  #    - 192.168.3.85:22122
+  pool:
+    #从池中借出的最大对象的数目（配置为-1表示不限制）
+    max-total: -1
+    #获取连接时的最大等待毫秒数（默认配置为5秒）
+    max-wait-millis: 5000
+    #每个key最大连接数
+    max-total-per-key: 50
+    #每个key对应的连接池最大空闲连接数
+    max-idle-per-key: 10
+    #每个key对应的连接池最小空闲连接数
+    min_idle_per_key: 5
+
+# 业务参数配置
+jwt:
+  #JWT 加密密钥
+  encode:
+    secret: E632A955E20251364C7193A4EA814E80
